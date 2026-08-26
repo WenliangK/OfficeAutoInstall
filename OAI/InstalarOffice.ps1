@@ -28,13 +28,17 @@ function Write-LoreText {
 #                    AUTO-CARGADOR DE MÓDULOS (IA Y ARCADE)
 # ========================================================================
 
+$JuegosDisponibles = $false
+
+# Prevenir error de ruta vacía si el script se ejecuta desde RAM (vía internet)
+$RutaBase = if ([string]::IsNullOrEmpty($PSScriptRoot)) { (Get-Location).Path } else { $PSScriptRoot }
+
 # 1. Cargar la IA Masi
-$ModuloIA = Join-Path -Path $PSScriptRoot -ChildPath "MASII\MasiAI.ps1"
+$ModuloIA = Join-Path -Path $RutaBase -ChildPath "MASII\MasiAI.ps1"
 if (Test-Path $ModuloIA) { . $ModuloIA }
 
 # 2. Cargar dinámicamente cualquier juego de la subcarpeta ArcadeGames
-$JuegosDisponibles = $false
-$CarpetaArcade = Join-Path -Path $PSScriptRoot -ChildPath "ArcadeGames"
+$CarpetaArcade = Join-Path -Path $RutaBase -ChildPath "ArcadeGames"
 if (Test-Path $CarpetaArcade) {
     Get-ChildItem -Path $CarpetaArcade -Filter "*.ps1" | ForEach-Object { . $_.FullName }
     if (Get-Command Show-ArcadeMenu -ErrorAction SilentlyContinue) {
