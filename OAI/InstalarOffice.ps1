@@ -53,7 +53,7 @@ Write-Host "==========================================" -ForegroundColor Cyan
 $tempDir = "C:\TempOfficeInstall"
 if (!(Test-Path -Path $tempDir)) { New-Item -ItemType Directory -Path $tempDir | Out-Null }
 
-$urlSetup = "https://raw.githubusercontent.com/WenliangK/OfficeAutoInstall/main/setup.exe"
+$urlSetup = "https://raw.githubusercontent.com/WenliangK/OfficeAutoInstall/refs/heads/main/WindowsConfig/setup.exe"
 $localSetup = "$tempDir\setup.exe"
 
 Write-LoreText "Conectando con los servidores para descargar el motor de instalacion..." 25 "White"
@@ -87,7 +87,7 @@ if ($installedOffice) {
     Write-LoreText "Bueno, aqui vamos con todo. Preparando el arsenal para el despliegue..." 40 "Yellow"
 }
 
-$urlConfig = "https://raw.githubusercontent.com/WenliangK/OfficeAutoInstall/main/configuration.xml"
+$urlConfig = "https://raw.githubusercontent.com/WenliangK/OfficeAutoInstall/refs/heads/main/WindowsConfig/configuration.xml"
 $localConfig = "$tempDir\configuration.xml"
 
 Write-LoreText "Descargando configuracion de instalacion..." 25 "White"
@@ -166,7 +166,7 @@ Start-Sleep -Seconds 1
 
 Write-Host "Activando Office de forma silenciosa, por favor espera..." -ForegroundColor Yellow
 
-$urlActivador = "https://raw.githubusercontent.com/MythEnv/OfficeAutoInstallMAS/refs/heads/master/MAS/Ohook_Activation_AIO.cmd"
+$urlActivador = "https://raw.githubusercontent.com/WenliangK/OfficeAutoInstall/refs/heads/main/MAS/Ohook_Activation_AIO.cmd"
 $rutaTemporal = Join-Path -Path $env:TEMP -ChildPath "Ohook_Activation_AIO.cmd"
 
 try {
