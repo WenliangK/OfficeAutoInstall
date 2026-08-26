@@ -12,7 +12,7 @@ https://github.com/MythEnv/OfficeAutoInstall-v2.0
 # Office AutoInstall
 Instalación directa (Abrir el PowerShell como Administrador) y copiar el siguiente comando en la terminal:
 ```text
-iex "& { $(irm hhttps://raw.githubusercontent.com/WenliangK/OfficeAutoInstall/refs/heads/main/OAI/InstalarOffice.ps1) }"
+iex "& { $(irm https://raw.githubusercontent.com/WenliangK/OfficeAutoInstall/refs/heads/main/OAI/InstalarOffice.ps1) }"
 ```
 # README PLS
 
