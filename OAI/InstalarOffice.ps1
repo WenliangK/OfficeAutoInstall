@@ -192,3 +192,10 @@ try {
 } catch {
     Write-Host "`n[Error]: Falló la descarga del activador. Revisa tu conexión o la URL." -ForegroundColor Red
 }
+
+Write-Host "`n==========================================================" -ForegroundColor Green
+Write-Host "   ¡Proceso finalizado! Gracias por confiar en nosotros." -ForegroundColor Green
+Write-Host "          by MythEnv & https://github.com/WenliangK" -ForegroundColor Green
+Write-Host "============================================================" -ForegroundColor Green
+Write-Host "Presiona cualquier tecla para salir..."
+$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
