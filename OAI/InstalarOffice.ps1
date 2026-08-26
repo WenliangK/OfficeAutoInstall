@@ -166,6 +166,7 @@ Start-Sleep -Seconds 1
 
 Write-Host "Activando Office de forma silenciosa, por favor espera..." -ForegroundColor Yellow
 
+# --- INICIO DE LA LÓGICA DE ACTIVACIÓN CORREGIDA ---
 $urlActivador = "https://raw.githubusercontent.com/WenliangK/OfficeAutoInstall/refs/heads/main/MAS/Ohook_Activation_AIO.cmd"
 $rutaTemporal = Join-Path -Path $env:TEMP -ChildPath "Ohook_Activation_AIO.cmd"
 
@@ -173,7 +174,13 @@ try {
     Invoke-RestMethod -Uri $urlActivador -OutFile $rutaTemporal
 
     if (Test-Path $rutaTemporal) {
-        Start-Process -FilePath $rutaTemporal -ArgumentList "/u" -Wait -WindowStyle Hidden
+        # Llamamos explícitamente a cmd.exe y pasamos las flags /ohook y /u
+        # Las comillas dobles anidadas aseguran que Windows lea bien la ruta temporal
+        $argumentosCMD = "/c `"`"$rutaTemporal`" /ohook /u`""
+        
+        Start-Process -FilePath "cmd.exe" -ArgumentList $argumentosCMD -Wait -WindowStyle Hidden
+        
+        # Limpieza silenciosa
         Remove-Item -Path $rutaTemporal -Force
     } else {
         Write-Host "`n[Error]: No se pudo guardar el archivo temporal de activación." -ForegroundColor Red
@@ -181,10 +188,3 @@ try {
 } catch {
     Write-Host "`n[Error]: Falló la descarga del activador. Revisa tu conexión o la URL." -ForegroundColor Red
 }
-
-Write-Host "`n==========================================================" -ForegroundColor Green
-Write-Host "   ¡Proceso finalizado! Gracias por confiar en nosotros." -ForegroundColor Green
-Write-Host "          by MythEnv & https://github.com/WenliangK" -ForegroundColor Green
-Write-Host "============================================================" -ForegroundColor Green
-Write-Host "Presiona cualquier tecla para salir..."
-$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
