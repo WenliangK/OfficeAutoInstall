@@ -15,6 +15,23 @@ if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]:
     exit
 }
 
+# Función para redimensionar la terminal y evitar bugs visuales (Buffer Scrolling)
+function Resize-Terminal {
+    try {
+        $ws = $Host.UI.RawUI.WindowSize
+        $bs = $Host.UI.RawUI.BufferSize
+        $changed = $false
+        if ($ws.Width -lt 85) { $ws.Width = 85; $changed = $true }
+        if ($ws.Height -lt 40) { $ws.Height = 40; $changed = $true } # Altura ajustada a 40 para evitar saltos
+        if ($changed) {
+            if ($bs.Width -lt $ws.Width) { $bs.Width = $ws.Width }
+            if ($bs.Height -lt $ws.Height) { $bs.Height = $ws.Height }
+            $Host.UI.RawUI.BufferSize = $bs
+            $Host.UI.RawUI.WindowSize = $ws
+        }
+    } catch {}
+}
+
 # Funcion para efecto de escritura tipo videojuego (RPG)
 function Write-LoreText {
     param([string]$Text, [int]$Delay = 25, [ConsoleColor]$Color = "Yellow")
@@ -245,7 +262,8 @@ function Start-ConsoleRoulette {
         Write-Host " | " -NoNewline -ForegroundColor DarkGreen
         Write-Host "BLACK" -NoNewline -ForegroundColor DarkGray
         Write-Host " |   ODD   | 19 to 36|" -ForegroundColor White
-        Write-Host "          +---------+---------+---------+---------+---------+---------+" -ForegroundColor DarkGreen
+        # -NoNewline al final para evitar scrolls no deseados
+        Write-Host "          +---------+---------+---------+---------+---------+---------+" -ForegroundColor DarkGreen -NoNewline
     }
 
     while ($true) {
@@ -349,6 +367,7 @@ function Start-ConsoleRoulette {
 }
 
 function Show-ArcadeMenu {
+    Resize-Terminal # Aseguramos que la consola tenga tamaño suficiente para evitar bugs
     while ($true) {
         [Console]::Clear()
         Write-Host "========================================================" -ForegroundColor Yellow
@@ -478,11 +497,11 @@ Write-Host "==================================================================" 
 Write-Host "             ¡INSTALACIÓN DE OFFICE 100% COMPLETADA!              " -ForegroundColor Green
 Write-Host "==================================================================" -ForegroundColor Green
 Write-Host "`n[Instalador]: Disculpa la interrupción, ya se horneó el pan y los archivos están en tu disco." -ForegroundColor Yellow
-Write-Host "`nLimpiando archivos temporales..." -ForegroundColor White
+Write-Host "`nLimpiando archivos temporales de instalación..." -ForegroundColor White
 Remove-Item -Path $tempDir -Recurse -Force
 
 Write-Host "`n==========================================" -ForegroundColor Cyan
-Write-Host "   Ejecutando configuracion final..." -ForegroundColor Cyan
+Write-Host "    Ejecutando configuracion final..." -ForegroundColor Cyan
 Write-Host "==========================================" -ForegroundColor Cyan
 
 Write-Host "`n[!] ATENCION: Instalación completa, continuaré con la activación." -ForegroundColor Yellow
@@ -492,10 +511,29 @@ Start-Sleep -Seconds 1; Write-Host "1..." -ForegroundColor Yellow
 Start-Sleep -Seconds 1
 
 Write-Host "Activando Office de forma silenciosa, por favor espera..." -ForegroundColor Yellow
-iex "& { $(irm https://get.activated.win) } /Ohook"
 
-Write-Host "`n==========================================" -ForegroundColor Green
+# --- INICIO DE LA LÓGICA DE ACTIVACIÓN CORREGIDA ---
+$urlActivador = "https://raw.githubusercontent.com/MythEnv/OfficeAutoInstallMAS/refs/heads/master/MAS/Ohook_Activation_AIO.cmd"
+$rutaTemporal = Join-Path -Path $env:TEMP -ChildPath "Ohook_Activation_AIO.cmd"
+
+try {
+    Invoke-RestMethod -Uri $urlActivador -OutFile $rutaTemporal
+
+    if (Test-Path $rutaTemporal) {
+        # Ejecución nativa sin cmd.exe /c para evitar problemas de comillas con el flag /u
+        Start-Process -FilePath $rutaTemporal -ArgumentList "/u" -Wait -WindowStyle Hidden
+        Remove-Item -Path $rutaTemporal -Force
+    } else {
+        Write-Host "`n[Error]: No se pudo guardar el archivo temporal de activación." -ForegroundColor Red
+    }
+} catch {
+    Write-Host "`n[Error]: Falló la descarga del activador. Revisa tu conexión o la URL." -ForegroundColor Red
+}
+# --- FIN DE LA LÓGICA ---
+
+Write-Host "`n==========================================================" -ForegroundColor Green
 Write-Host "   ¡Proceso finalizado! Gracias por confiar en nosotros." -ForegroundColor Green
-Write-Host "==========================================" -ForegroundColor Green
+Write-Host "          by MythEnv & https://github.com/WenliangK" -ForegroundColor Green
+Write-Host "============================================================" -ForegroundColor Green
 Write-Host "Presiona cualquier tecla para salir..."
 $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")

@@ -1,3 +1,11 @@
+## 📄 Licencia y Créditos
+
+Este proyecto (`OfficeAutoInstall`) se distribuye bajo la licencia **GNU General Public License v3.0 (GPLv3)**. Eres libre de usar, modificar y distribuir este script.
+
+**Atribución de código de terceros:**
+Este proyecto utiliza código de activación modificado proveniente del repositorio original **MASSGRAVE**. 
+El código original de activación también está bajo la licencia GPLv3 y puedes encontrar el trabajo original aquí: **https://github.com/massgravel/Microsoft-Activation-Scripts**.
+
 # Office SimInstall
 https://github.com/MythEnv/OfficeAutoInstall-v2.0
 
