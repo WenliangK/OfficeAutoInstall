@@ -23,28 +23,69 @@ function Write-LoreText {
     }
     Write-Host ""
 }
-
 # ========================================================================
-#                    AUTO-CARGADOR DE MÓDULOS (IA Y ARCADE)
+#                    AUTO-CARGADOR HÍBRIDO (LOCAL / NUBE)
 # ========================================================================
 
 $JuegosDisponibles = $false
+$EjecucionWeb = [string]::IsNullOrEmpty($PSScriptRoot)
 
-# Prevenir error de ruta vacía si el script se ejecuta desde RAM (vía internet)
-$RutaBase = if ([string]::IsNullOrEmpty($PSScriptRoot)) { (Get-Location).Path } else { $PSScriptRoot }
+Write-Host "`n[Sistema]: Iniciando rastreo de dependencias..." -ForegroundColor DarkGray
 
-# 1. Cargar la IA Masi
-$ModuloIA = Join-Path -Path $RutaBase -ChildPath "MASII\MasiAI.ps1"
-if (Test-Path $ModuloIA) { . $ModuloIA }
+if ($EjecucionWeb) {
+    Write-Host "[Sistema]: Ejecución web detectada. Preparando entorno de transición..." -ForegroundColor Magenta
+    
+    # Crear carpeta temporal secreta para descargar los módulos de forma segura
+    $tempMods = Join-Path $env:TEMP "OAI_Modules"
+    if (!(Test-Path $tempMods)) { New-Item -ItemType Directory -Path $tempMods | Out-Null }
 
-# 2. Cargar dinámicamente cualquier juego de la subcarpeta ArcadeGames
-$CarpetaArcade = Join-Path -Path $RutaBase -ChildPath "ArcadeGames"
-if (Test-Path $CarpetaArcade) {
-    Get-ChildItem -Path $CarpetaArcade -Filter "*.ps1" | ForEach-Object { . $_.FullName }
-    if (Get-Command Show-ArcadeMenu -ErrorAction SilentlyContinue) {
-        $JuegosDisponibles = $true
+    # 1. Descargar y cargar MasiAI
+    try {
+        $iaUrl = "https://raw.githubusercontent.com/WenliangK/OfficeAutoInstall/refs/heads/main/OAI/MASII/MasiAI.ps1"
+        $iaTemp = Join-Path $tempMods "MasiAI.ps1"
+        Invoke-WebRequest -Uri $iaUrl -OutFile $iaTemp
+        . "$iaTemp"
+        Write-Host "[Sistema]: Módulo IA inyectado [OK]" -ForegroundColor DarkGray
+    } catch { Write-Host "[Error]: No se pudo enlazar la IA desde GitHub." -ForegroundColor Red }
+
+    # 2. Descargar y cargar Arcade
+    try {
+        $listaJuegos = @("ArcadeMenu.ps1", "Snake.ps1", "Blackjack.ps1", "Ruleta.ps1", "SpaceInvaders.ps1", "Asteroids.ps1")
+        $baseArcade = "https://raw.githubusercontent.com/WenliangK/OfficeAutoInstall/refs/heads/main/OAI/ArcadeGames/"
+        
+        foreach ($juego in $listaJuegos) {
+            $rutaTemp = Join-Path $tempMods $juego
+            Invoke-WebRequest -Uri "$baseArcade$juego" -OutFile $rutaTemp
+            . "$rutaTemp"
+        }
+        
+        if (Get-Command Show-ArcadeMenu -ErrorAction SilentlyContinue) {
+            $JuegosDisponibles = $true
+            Write-Host "[Sistema]: Módulo Arcade inyectado [OK]" -ForegroundColor DarkGray
+        }
+    } catch { Write-Host "[Error]: Falló la descarga de los juegos desde la nube." -ForegroundColor Red }
+
+} else {
+    Write-Host "[Sistema]: Ejecución local detectada. Buscando en carpetas físicas..." -ForegroundColor Magenta
+    $RutaBase = if ($PSScriptRoot) { $PSScriptRoot } else { $PWD.Path }
+    if (-not (Test-Path (Join-Path $RutaBase "ArcadeGames")) -and (Test-Path (Join-Path $RutaBase "QA Tester\ArcadeGames"))) {
+        $RutaBase = Join-Path $RutaBase "QA Tester"
+    }
+
+    $ModuloIA = Join-Path -Path $RutaBase -ChildPath "MASII\MasiAI.ps1"
+    if (Test-Path $ModuloIA) { . "$ModuloIA"; Write-Host "[Sistema]: Módulo IA Local [OK]" -ForegroundColor DarkGray }
+
+    $CarpetaArcade = Join-Path -Path $RutaBase -ChildPath "ArcadeGames"
+    if (Test-Path $CarpetaArcade) {
+        $archivosJuegos = Get-ChildItem -Path $CarpetaArcade -Filter "*.ps1"
+        foreach ($juego in $archivosJuegos) { . "$($juego.FullName)" }
+        if (Get-Command Show-ArcadeMenu -ErrorAction SilentlyContinue) {
+            $JuegosDisponibles = $true
+            Write-Host "[Sistema]: Módulo Arcade Local [OK]" -ForegroundColor DarkGray
+        }
     }
 }
+Write-Host ""
 
 # ========================================================================
 #                    FLUJO PRINCIPAL DE INSTALACIÓN
