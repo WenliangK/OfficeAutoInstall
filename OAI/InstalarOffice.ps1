@@ -23,6 +23,7 @@ function Write-LoreText {
     }
     Write-Host ""
 }
+
 # ========================================================================
 #                    AUTO-CARGADOR HÍBRIDO (LOCAL / NUBE)
 # ========================================================================
@@ -35,27 +36,32 @@ Write-Host "`n[Sistema]: Iniciando rastreo de dependencias..." -ForegroundColor 
 if ($EjecucionWeb) {
     Write-Host "[Sistema]: Ejecución web detectada. Preparando entorno de transición..." -ForegroundColor Magenta
     
+    # [!] CRÍTICO PARA WINDOWS: Forzar protocolo TLS 1.2 para que GitHub no rechace la conexión
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    
     # Crear carpeta temporal secreta para descargar los módulos de forma segura
     $tempMods = Join-Path $env:TEMP "OAI_Modules"
-    if (!(Test-Path $tempMods)) { New-Item -ItemType Directory -Path $tempMods | Out-Null }
+    if (!(Test-Path $tempMods)) { New-Item -ItemType Directory -Path $tempMods -Force | Out-Null }
 
-    # 1. Descargar y cargar MasiAI
+    # 1. Descargar y cargar MasiAI (con UseBasicParsing para evitar motor IE)
     try {
-        $iaUrl = "https://raw.githubusercontent.com/WenliangK/OfficeAutoInstall/refs/heads/main/OAI/MASII/MasiAI.ps1"
+        $iaUrl = "https://raw.githubusercontent.com/WenliangK/OfficeAutoInstall/main/OAI/MASII/MasiAI.ps1"
         $iaTemp = Join-Path $tempMods "MasiAI.ps1"
-        Invoke-WebRequest -Uri $iaUrl -OutFile $iaTemp
+        Invoke-WebRequest -Uri $iaUrl -OutFile $iaTemp -UseBasicParsing
         . "$iaTemp"
         Write-Host "[Sistema]: Módulo IA inyectado [OK]" -ForegroundColor DarkGray
-    } catch { Write-Host "[Error]: No se pudo enlazar la IA desde GitHub." -ForegroundColor Red }
+    } catch { 
+        Write-Host "[Error]: No se pudo enlazar la IA. $($_.Exception.Message)" -ForegroundColor Red 
+    }
 
     # 2. Descargar y cargar Arcade
     try {
         $listaJuegos = @("ArcadeMenu.ps1", "Snake.ps1", "Blackjack.ps1", "Ruleta.ps1", "SpaceInvaders.ps1", "Asteroids.ps1")
-        $baseArcade = "https://raw.githubusercontent.com/WenliangK/OfficeAutoInstall/refs/heads/main/OAI/ArcadeGames/"
+        $baseArcade = "https://raw.githubusercontent.com/WenliangK/OfficeAutoInstall/main/OAI/ArcadeGames/"
         
         foreach ($juego in $listaJuegos) {
             $rutaTemp = Join-Path $tempMods $juego
-            Invoke-WebRequest -Uri "$baseArcade$juego" -OutFile $rutaTemp
+            Invoke-WebRequest -Uri "$baseArcade$juego" -OutFile $rutaTemp -UseBasicParsing
             . "$rutaTemp"
         }
         
@@ -63,7 +69,9 @@ if ($EjecucionWeb) {
             $JuegosDisponibles = $true
             Write-Host "[Sistema]: Módulo Arcade inyectado [OK]" -ForegroundColor DarkGray
         }
-    } catch { Write-Host "[Error]: Falló la descarga de los juegos desde la nube." -ForegroundColor Red }
+    } catch { 
+        Write-Host "[Error]: Falló la descarga de los juegos. $($_.Exception.Message)" -ForegroundColor Red 
+    }
 
 } else {
     Write-Host "[Sistema]: Ejecución local detectada. Buscando en carpetas físicas..." -ForegroundColor Magenta
