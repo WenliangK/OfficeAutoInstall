@@ -9,19 +9,24 @@ Write-Host "  [!] ¡TIENES QUE LEER EL README ANTES DE EJECUTAR ESTO!" -Foregrou
 Write-Host "==================================================================" -ForegroundColor Red
 Start-Sleep -Seconds 3
 
-if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    Write-Host "`nSolicitando permisos de administrador..." -ForegroundColor Yellow
-    Start-Process PowerShell -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
-    exit
-}
+# ========================================================================
+#               ELEVACIÓN DE PRIVILEGIOS (CLOUD-AWARE)
+# ========================================================================
+$esAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
-function Write-LoreText {
-    param([string]$Text, [int]$Delay = 25, [ConsoleColor]$Color = "Yellow")
-    foreach ($char in $Text.ToCharArray()) {
-        Write-Host $char -NoNewline -ForegroundColor $Color
-        Start-Sleep -Milliseconds $Delay
+if (-not $esAdmin) {
+    Write-Host "`n[!] Solicitando permisos de administrador..." -ForegroundColor Yellow
+    Start-Sleep -Seconds 1
+    
+    if ($PSCommandPath) {
+        # Si se ejecutó desde un archivo local físico (.ps1)
+        Start-Process powershell.exe "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
+    } else {
+        # Si se ejecutó desde la web (RAM / iex)
+        $comandoWeb = "iex `"`& { `$(irm https://raw.githubusercontent.com/WenliangK/OfficeAutoInstall/main/OAI/InstalarOffice.ps1) }`""
+        Start-Process powershell.exe "-NoProfile -ExecutionPolicy Bypass -Command '$comandoWeb'" -Verb RunAs
     }
-    Write-Host ""
+    exit
 }
 
 # ========================================================================
