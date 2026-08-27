@@ -1,20 +1,12 @@
-function Resize-Terminal {
-    try {
-        $ws = $Host.UI.RawUI.WindowSize; $bs = $Host.UI.RawUI.BufferSize; $changed = $false
-        if ($ws.Width -lt 85) { $ws.Width = 85; $changed = $true }
-        if ($ws.Height -lt 40) { $ws.Height = 40; $changed = $true }
-        if ($changed) {
-            if ($bs.Width -lt $ws.Width) { $bs.Width = $ws.Width }
-            if ($bs.Height -lt $ws.Height) { $bs.Height = $ws.Height }
-            $Host.UI.RawUI.BufferSize = $bs; $Host.UI.RawUI.WindowSize = $ws
-        }
-    } catch {}
-}
-
 function Show-ArcadeMenu {
-    Resize-Terminal
     while ($true) {
+        # Limpiamos la pantalla
         [Console]::Clear()
+        
+        # [!] CRÍTICO PARA WINDOWS: Forzamos el cursor a la primera línea arriba del todo
+        # Esto evita el bug del espacio gigante y el scroll infinito
+        try { [Console]::SetCursorPosition(0, 0) } catch {}
+        
         Write-Host "========================================================" -ForegroundColor Yellow
         Write-Host "               CASINO VIRTUAL Y ARCADE RETRO            " -ForegroundColor Yellow
         Write-Host "========================================================" -ForegroundColor Yellow
