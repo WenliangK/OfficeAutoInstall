@@ -30,6 +30,18 @@ if (-not $esAdmin) {
 }
 
 # ========================================================================
+#               FUNCIONES DE INTERFAZ Y DISEÑO
+# ========================================================================
+function Write-LoreText {
+    param([string]$Text, [int]$Delay = 25, [ConsoleColor]$Color = "Yellow")
+    foreach ($char in $Text.ToCharArray()) {
+        Write-Host $char -NoNewline -ForegroundColor $Color
+        Start-Sleep -Milliseconds $Delay
+    }
+    Write-Host ""
+}
+
+# ========================================================================
 #            AUTO-CARGADOR IN-MEMORY (LA MAGIA DE LA SOLA LÍNEA)
 # ========================================================================
 
