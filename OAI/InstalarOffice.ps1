@@ -25,7 +25,7 @@ function Write-LoreText {
 }
 
 # ========================================================================
-#                    AUTO-CARGADOR HÍBRIDO (LOCAL / NUBE)
+#            AUTO-CARGADOR IN-MEMORY (LA MAGIA DE LA SOLA LÍNEA)
 # ========================================================================
 
 $JuegosDisponibles = $false
@@ -34,50 +34,47 @@ $EjecucionWeb = [string]::IsNullOrEmpty($PSScriptRoot)
 Write-Host "`n[Sistema]: Iniciando rastreo de dependencias..." -ForegroundColor DarkGray
 
 if ($EjecucionWeb) {
-    Write-Host "[Sistema]: Ejecución web detectada. Preparando entorno de transición..." -ForegroundColor Magenta
+    Write-Host "[Sistema]: Ejecución RAM detectada. Inyectando módulos sin tocar el disco duro..." -ForegroundColor Magenta
     
-    # [!] CRÍTICO PARA WINDOWS: Forzar protocolo TLS 1.2 para que GitHub no rechace la conexión
+    # 1. Forzar TLS 1.2 para que GitHub permita la conexión
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     
-    # Crear carpeta temporal secreta para descargar los módulos de forma segura
-    $tempMods = Join-Path $env:TEMP "OAI_Modules"
-    if (!(Test-Path $tempMods)) { New-Item -ItemType Directory -Path $tempMods -Force | Out-Null }
+    # 2. Configurar cliente web con UTF-8 estricto para no romper el arte ASCII de los juegos
+    $webClient = New-Object System.Net.WebClient
+    $webClient.Encoding = [System.Text.Encoding]::UTF8
 
-    # 1. Descargar y cargar MasiAI (con UseBasicParsing para evitar motor IE)
+    # 3. Cargar MasiAI directamente en el Scope actual (RAM)
     try {
         $iaUrl = "https://raw.githubusercontent.com/WenliangK/OfficeAutoInstall/main/OAI/MASII/MasiAI.ps1"
-        $iaTemp = Join-Path $tempMods "MasiAI.ps1"
-        Invoke-WebRequest -Uri $iaUrl -OutFile $iaTemp -UseBasicParsing
-        . "$iaTemp"
-        Write-Host "[Sistema]: Módulo IA inyectado [OK]" -ForegroundColor DarkGray
-    } catch { 
-        Write-Host "[Error]: No se pudo enlazar la IA. $($_.Exception.Message)" -ForegroundColor Red 
-    }
+        $iaContent = $webClient.DownloadString($iaUrl)
+        . ([ScriptBlock]::Create($iaContent))
+        Write-Host "[Sistema]: Módulo IA inyectado en RAM [OK]" -ForegroundColor DarkGray
+    } catch { Write-Host "[Error]: No se pudo enlazar la IA. $($_.Exception.Message)" -ForegroundColor Red }
 
-    # 2. Descargar y cargar Arcade
+    # 4. Cargar Arcade directamente en el Scope actual (RAM)
     try {
         $listaJuegos = @("ArcadeMenu.ps1", "Snake.ps1", "Blackjack.ps1", "Ruleta.ps1", "SpaceInvaders.ps1", "Asteroids.ps1")
         $baseArcade = "https://raw.githubusercontent.com/WenliangK/OfficeAutoInstall/main/OAI/ArcadeGames/"
         
         foreach ($juego in $listaJuegos) {
-            $rutaTemp = Join-Path $tempMods $juego
-            Invoke-WebRequest -Uri "$baseArcade$juego" -OutFile $rutaTemp -UseBasicParsing
-            . "$rutaTemp"
+            $juegoContent = $webClient.DownloadString("$baseArcade$juego")
+            . ([ScriptBlock]::Create($juegoContent))
         }
         
         if (Get-Command Show-ArcadeMenu -ErrorAction SilentlyContinue) {
             $JuegosDisponibles = $true
-            Write-Host "[Sistema]: Módulo Arcade inyectado [OK]" -ForegroundColor DarkGray
+            Write-Host "[Sistema]: Módulo Arcade inyectado en RAM [OK]" -ForegroundColor DarkGray
         }
-    } catch { 
-        Write-Host "[Error]: Falló la descarga de los juegos. $($_.Exception.Message)" -ForegroundColor Red 
-    }
+    } catch { Write-Host "[Error]: Falló la descarga de los juegos. $($_.Exception.Message)" -ForegroundColor Red }
 
 } else {
     Write-Host "[Sistema]: Ejecución local detectada. Buscando en carpetas físicas..." -ForegroundColor Magenta
     $RutaBase = if ($PSScriptRoot) { $PSScriptRoot } else { $PWD.Path }
+    
     if (-not (Test-Path (Join-Path $RutaBase "ArcadeGames")) -and (Test-Path (Join-Path $RutaBase "QA Tester\ArcadeGames"))) {
         $RutaBase = Join-Path $RutaBase "QA Tester"
+    } elseif (-not (Test-Path (Join-Path $RutaBase "ArcadeGames")) -and (Test-Path (Join-Path $RutaBase "OAI\ArcadeGames"))) {
+        $RutaBase = Join-Path $RutaBase "OAI"
     }
 
     $ModuloIA = Join-Path -Path $RutaBase -ChildPath "MASII\MasiAI.ps1"
