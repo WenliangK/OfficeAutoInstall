@@ -19,12 +19,8 @@
       <ExcludeApp ID="Outlook" />
     </Product>
   </Add>
-  
-  <!-- Aquí está el nuevo código que limpia Microsoft 365 y versiones anteriores -->
   <Remove All="TRUE" />
-
   <Property Name="SharedComputerLicensing" Value="0" />
-  <!-- Cambiado a TRUE para que no se congele si hay un Word viejo abierto -->
   <Property Name="FORCEAPPSHUTDOWN" Value="TRUE" />
   <Property Name="DeviceBasedLicensing" Value="0" />
   <Property Name="SCLCacheOverride" Value="0" />
